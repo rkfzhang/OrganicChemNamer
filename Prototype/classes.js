@@ -43,50 +43,94 @@ class Compound {
 		// parses name and creates compound as a graph where nodes are elements
 		// should be a list of elements (where the elements link forms a graph)
 
+		//NOTE: Does not work if name is in shorten form (not including -1-) FIX LATER
+
+		// initial values
+		let dataArray = []; //2D array to store all branch data
+
 		const section = this.name.split("-");
-		let index = section.length - 1;
+		let index = section.length - 1; // for tracking current position of section
+
+		const carbonSuffix = ["meth", "eth", "prop", "but", "pent", "hex", "hept", "oct", "non", "dec"];
+		const carbonSuffixLength = carbonSuffix.length;
+
+		const alkylHalides = ["fluoro", "chloro", "bromo", "iodo"];
+		const alkylHalidesLength = alkylHalides.length;
 
 		// check for triple bond
 		if (section[index] === "yne") {
 			var longestChain = section[index - 2];
-			var tripleBond = section[index - 1] //ie [2,3]
+			dataArray.push(["tripleBond", section[index - 1]]);
 			index -= 2;
 		}
 		else {
 			var longestChain = section[index];
-			var tripleBond = -1;
 		}
 
 		// check for double bond
 		const strChainLength = longestChain.length;
 
 		if (longestChain.substring(strChainLength - 3, strChainLength) === "ene") {
-			var doubleBond = section[index - 1]; //ie [2,3]
-		}
-		else {
-			var doubleBond = -1;
+			dataArray.push(["doubleBond", section[index - 1]]);
 		}
 
 		// check for carbon chain length
-		const carbonSuffix = ["meth", "eth", "prop", "but", "pent", "hex", "hept", "oct", "non", "dec"];
-		const carbonSuffixLength = carbonSuffix.length;
+		let carbonChain = -1;
 
-		for (let i = 0; i < carbonSuffixLength; i++) {
-		
-			if (carbonSuffix[i] === longestChain.substring(0, carbonSuffix[i].length)) {
-				var carbonChain = i + 1;
+		for (let z = index; z >= 0; z--) {
+
+			for (let i = carbonSuffixLength - 1; i >= 0; i--) {
+			
+				if (section[z].includes(carbonSuffix[i])) {
+
+					carbonChain = i + 1;
+					longestChain = section[z];
+					index = z;
+					break;
+				}
+			}
+			if (carbonChain != -1) {
 				break;
 			}
 		}
 
-		console.log("Name:");
-		console.log(this.name);
-		console.log("Triple bond:");
-		console.log(tripleBond);
-		console.log("Double bond:");
-		console.log(doubleBond);
-		console.log("Carbon length:");
-		console.log(carbonChain);
+		dataArray.push(["carbonChain", carbonChain]);
+
+		// check for carbon branch
+		let carbonBranch = -1;
+
+		for (let i = carbonChain - 2; i >= 0; i--) {
+		
+			if (longestChain.includes(carbonSuffix[i])) {
+
+				if (carbonBranch == -1) {
+					carbonBranch = i;
+				}
+				else if (carbonSuffix[i].length > carbonSuffix[carbonBranch].length) {
+					carbonBranch = i;
+				}
+			}
+		}
+
+		if (carbonBranch != -1) {
+			dataArray.push([carbonSuffix[carbonBranch] + "yl", section[index - 1]]);;
+		}
+
+		
+
+		
+		// check for alkyl halides
+		for (let i = alkylHalidesLength - 1; i >= 0; i--) {
+		
+			if (longestChain.includes(alkylHalides[i])) {
+				dataArray.push([alkylHalides[i], section[index - 1]]);
+			}
+		}
+
+		// for debugging
+		console.log(longestChain);
+		this.print();
+		console.log(dataArray);
 
 	}
 
@@ -100,6 +144,7 @@ let a = new Element("a", "A");
 let b = new Element("b", "B");
 let c = new Element("c", "C");
 
+/*
 a.link(b);
 a.link(c);
 c.link(b);
@@ -107,6 +152,16 @@ c.link(b);
 a.print();
 b.print();
 c.print();
+*/
 
-let compTest = new Compound("1,3-hexdiene-5-yne");
+let compTest = new Compound("3-methyl-1-hexene-5-yne");
 compTest.create();
+
+// example cases to consider:
+// 1-hexene-4-yne-2-ol
+// 2,3-dimethylhexane-5-yne
+// 3-methyl-1-hexene-5-yne
+// 1,1-difluoro-2-methyl-but-1,3-diene
+// 2-fluorohexane
+
+// NOTE: use string.includes(substring) to make life easier (ES6)
