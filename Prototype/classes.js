@@ -61,7 +61,6 @@ class parser {
 				sections[i + 1] = sections[i + 1].replace(prefix[sections[i].length - 1], "");
 			}
 		}
-		console.log(sections);
 		return sections;
 	}
 
@@ -91,6 +90,39 @@ class parser {
 
 		return false;
 	}
+
+	// retrives all branches aside from main parent
+	static getBranches(sections) {
+		let branches = [];
+		let length = sections.length;
+		let tmp = parser.longestChain(sections);
+		let size = tmp[0];
+		let parentIndex = tmp[1];
+
+		for (let i = 0; i < length;) {
+			if (typeof sections[i] != "string" && i != parentIndex - 1) {
+				branches.push([sections[i + 1], sections[i]]);
+				i += 2;
+			}
+			else {
+				i++;
+			}
+		}
+		branches.push(["length", size]);
+
+		if (parentIndex >= 1) {
+			branches.push([sections[parentIndex], sections[parentIndex - 1]]);
+		}
+		else {
+			branches.push([sections[parentIndex], 1]);
+		}
+		return branches;
+	}
+
+	// parses the parent branch
+	static parseParent(parent) {
+
+	}
 }
 
 // Compound class (graph)
@@ -111,10 +143,11 @@ class Compound {
 		// Will need to modulize later...
 
 		// initial values
-		let dataArray = []; //2D array to store all branch data
-
 		const sections = parser.formatData(this.name);
-		//console.log(parser.longestChain(sections));
+		let dataArray = parser.getBranches(sections); //2D array to store all branch data
+		console.log(dataArray);
+
+		/*
 		let index = sections.length - 1; // for tracking current position of sections
 
 		const carbonSuffix = ["meth", "eth", "prop", "but", "pent", "hex", "hept", "oct", "non", "dec"];
@@ -122,6 +155,8 @@ class Compound {
 
 		const alkylHalides = ["fluoro", "chloro", "bromo", "iodo"];
 		const alkylHalidesLength = alkylHalides.length;
+
+		parser.getBranches(sections);
 
 		// check for triple bond
 		if (sections[index] === "yne") {
@@ -202,6 +237,8 @@ class Compound {
 		this.print();
 		console.log(dataArray);
 
+		*/
+
 	}
 
 	print() {
@@ -224,11 +261,12 @@ b.print();
 c.print();
 */
 
-let compTest = new Compound("2,3-dimethylhexane-5-yne");
+let compTest = new Compound("5,8,4-trifluoro-2,3-diheptyl-3-methyl-1-hexene-5-yne");
 compTest.create();
 
 
 // example cases to consider:
+// ethane
 // 1-hexene-4-yne-2-ol
 // 2,3-dimethylhexane-5-yne
 // 3-methyl-1-hexene-5-yne
