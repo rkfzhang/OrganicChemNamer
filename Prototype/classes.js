@@ -119,10 +119,107 @@ class parser {
 		return branches;
 	}
 
-	// parses the parent branch
-	static parseParent(parent) {
+	// parses the parent branch (make sure parent is last element)
+	static parseParent(dataArray) {
+		let length = dataArray.length;
+		let parent = dataArray[length - 1];
+
+		const carbonBranch = ["methyl", "ethyl", "propyl", "butyl", "pentyl", "hexyl", "heptyl", "octyl", "nonyl", "decyl"];
+
+		const alkylHalides = ["fluoro", "chloro", "bromo", "iodo"];
+
+		const carbonBonds = ["ene", "yne", "en", "yn"];
+
+		const functionalS = ["amine", "thiol", "ol", "one", "al", "nitrile", "amide", "oate", "oic acid"];
+
+		const functionalP = ["amino", "mercapto", "hydroxy", "oxo", "formyl", "cyano", "carbamoyl", "carboxy"];
+
+		const allGroups = [carbonBranch, alkylHalides, carbonBonds, functionalS, functionalP];
+		let allGroupsLength = allGroups.length;
+
+		let possibleBranches = [];
+
+		for (let i = 0; i < allGroupsLength; i++) {
+			parser.arrayIncludes(allGroups[i], parent[0], possibleBranches);
+		}
+
+		let possibleBranchesLength = possibleBranches.length;
+
+		if (possibleBranchesLength > 0) {
+			let firstBranch = parser.arrayFirstSubstring(possibleBranches, parent[0]);
+			dataArray.push([possibleBranches[firstBranch], parent[1]]);
+			parser.removeIndex(possibleBranches, firstBranch);
+			let possibleBranchesLength = possibleBranches.length;
+
+			for (let i = 0; i < possibleBranchesLength; i++) {
+				dataArray.push([possibleBranches[i], [1]]);
+			}
+		}
+
+		parser.removeIndex(dataArray, length - 1);
 
 	}
+
+	// finds the first substring index in array that appears in string
+	static arrayFirstSubstring(array, string) {
+		let min = -1;
+		let index = -1;
+		let length = array.length;
+
+		for (let i = 0; i < length; i++) {
+			let at = string.indexOf(array[i]);
+
+			if (at != -1) {
+				if (index == -1 || index > at) {
+					index = at;
+					min = i;
+				}
+			}
+		}
+		return min;
+
+	}
+
+	// checks if any array element is a substring of string (appends to output array)
+	static arrayIncludes(array, string, output) {
+		let length = array.length;
+
+		for (let i = 0; i < length; i++) {
+
+			if (string.includes(array[i])) {
+				output.push(array[i]);
+				string = string.replace(array[i], "");
+			}
+		}
+	}
+
+	// removes array element at index
+	static removeIndex(array, index) {
+		array.splice(index, 1);
+	}
+
+	// adjusts all elements to its proper branch name
+	static polishData(dataArray) {
+		let length = dataArray.length;
+
+		for (let i = 0; i < length; i++) {
+
+			switch (dataArray[i][0]) {
+				case "ene":
+				case "en":
+					dataArray[i][0] = "alkene";
+				case "yne":
+				case "yn":
+					dataArray[i][0] = "alkyne";
+				case "ol":
+				case "hydroxy":
+					dataArray[i][0] = "alcohol";
+			}
+		}
+	}
+
+	// https://www.masterorganicchemistry.com/2011/02/14/table-of-functional-group-priorities-for-nomenclature/
+
 }
 
 // Compound class (graph)
@@ -131,113 +228,20 @@ class Compound {
 	// initialize Compound (str)
 	constructor(name) {
 		this.name = name;
+		this.rawData = [];
 	}
 
 	create() {
 		// parses name and creates compound as a graph where nodes are elements
 		// should be a list of elements (where the elements link forms a graph)
 
-		// NOTE: Does not work if name is in shorten form (not including -1-) FIX LATER
-		// NOTE: Shits pretty messy right now, will organize later...
-
-		// Will need to modulize later...
-
-		// initial values
 		const sections = parser.formatData(this.name);
 		let dataArray = parser.getBranches(sections); //2D array to store all branch data
+		parser.parseParent(dataArray);
+		parser.polishData(dataArray);
 		console.log(dataArray);
 
-		/*
-		let index = sections.length - 1; // for tracking current position of sections
-
-		const carbonSuffix = ["meth", "eth", "prop", "but", "pent", "hex", "hept", "oct", "non", "dec"];
-		const carbonSuffixLength = carbonSuffix.length;
-
-		const alkylHalides = ["fluoro", "chloro", "bromo", "iodo"];
-		const alkylHalidesLength = alkylHalides.length;
-
-		parser.getBranches(sections);
-
-		// check for triple bond
-		if (sections[index] === "yne") {
-			var longestChain = sections[index - 2];
-			parser.dataArrayPush(dataArray, "tripleBond", sections[index - 1]);
-			index -= 2;
-		}
-		else {
-			var longestChain = sections[index];
-		}
-
-		// check for double bond
-		const strChainLength = longestChain.length;
-
-		if (longestChain.substring(strChainLength - 3, strChainLength) === "ene") {
-			parser.dataArrayPush(dataArray, "doubleBond", sections[index - 1]);
-		}
-
-		// check for carbon chain length
-		let tmp = parser.longestChain(sections);
-		let carbonChain = tmp[0];
-		index = tmp[1];
-
-		parser.dataArrayPush(dataArray, "carbonChain", carbonChain);
-
-		// check for carbon branch
-		let carbonBranch = -1;
-
-		for (let i = carbonChain - 2; i >= 0; i--) {
-		
-			if (longestChain.includes(carbonSuffix[i])) {
-
-				if (carbonBranch == -1) {
-					carbonBranch = i;
-				}
-				else if (carbonSuffix[i].length > carbonSuffix[carbonBranch].length) {
-					carbonBranch = i;
-				}
-			}
-		}
-
-		if (carbonBranch != -1) {
-			parser.dataArrayPush(dataArray, carbonSuffix[carbonBranch] + "yl", sections[index - 1]);
-		}
-
-		for (let z = index; z >= 0; z--) {
-
-			for (let i = 0; i < carbonSuffixLength; i++) {
-
-				if (parser.includesEnd(sections[z], carbonSuffix[i] + "yl")) {
-					parser.dataArrayPush(dataArray, carbonSuffix[i] + "yl", sections[z - 1]);
-					break;
-				}
-			}
-		}
-		
-		// check for alkyl halides
-		for (let i = alkylHalidesLength - 1; i >= 0; i--) {
-		
-			if (longestChain.includes(alkylHalides[i])) {
-				parser.dataArrayPush(dataArray, alkylHalides[i], sections[index - 1]);
-			}
-		}
-
-		for (let z = index; z >= 0; z--) {
-
-			for (let i = 0; i < alkylHalidesLength; i++) {
-
-				if (parser.includesEnd(sections[z], alkylHalides[i])) {
-					parser.dataArrayPush(dataArray, alkylHalides[i], sections[z - 1]);
-					break;
-				}
-			}
-		}
-
-		// for debugging
-		console.log(longestChain);
-		this.print();
-		console.log(dataArray);
-
-		*/
+		this.rawData = dataArray;
 
 	}
 
@@ -261,8 +265,39 @@ b.print();
 c.print();
 */
 
-let compTest = new Compound("5,8,4-trifluoro-2,3-diheptyl-3-methyl-1-hexene-5-yne");
-compTest.create();
+let compTest1 = new Compound("5,8,4-trifluoro-2,3-diheptyl-3-methyl-1-hexene-5-yne");
+compTest1.create();
+
+let compTest2 = new Compound("2,3-dimethylhexane-5-yne");
+compTest2.create();
+
+let compTest3 = new Compound("1,1-difluoro-2-methylbut-1,3-diene");
+compTest3.create();
+
+let compTest4 = new Compound("2,3-difluorochloroethylmethylbutene");
+compTest4.create();
+
+let compTest5 = new Compound("ethane");
+compTest5.create();
+
+let compTest6 = new Compound("2,3,5-trimethyl-4-propylheptane");
+compTest6.create();
+
+let compTest7 = new Compound("3-butenoic acid");
+compTest7.create();
+
+let compTest8 = new Compound("2,2,6,6,7-pentamethyloctane");
+compTest8.create();
+
+let compTest9 = new Compound("5-oxohexanoic acid");
+compTest9.create();
+
+let compTest10 = new Compound("2-methyl-1-penten-3-yne");
+compTest10.create();
+
+let compTest11 = new Compound("3-butyn-2-ol");
+compTest11.create();
+
 
 
 // example cases to consider:
@@ -270,10 +305,11 @@ compTest.create();
 // 1-hexene-4-yne-2-ol
 // 2,3-dimethylhexane-5-yne
 // 3-methyl-1-hexene-5-yne
-// 1,1-difluoro-2-methyl-but-1,3-diene
+// 1,1-difluoro-2-methylbut-1,3-diene
 // 2-fluorohexane
 // 5,8,4-trifluoro-2,3-diheptyl-3-methyl-1-hexene-5-yne
 // 1,2,3,4,4-pentachlorobutane
 // 1,2,2,3,4,4-hexachlorobutane
+// 2,3-difluorochloromethylbutane
 
 // NOTE: use string.includes(substring) to make life easier (ES6)
