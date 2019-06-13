@@ -3,6 +3,7 @@
 <head>
 	<title>Organic Chemisty Namer</title>
 	<link rel="stylesheet" type="text/css" href="styles/main.css">
+	<script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
 </head>
 <body>
 	<header>
@@ -22,38 +23,6 @@
 
 
 
-	<script type="text/javascript">
-		var linkType = [false,false,false];
-		var singleButton = document.getElementsByClassName("single")[0];
-		var doubleButton = document.getElementsByClassName("double")[0];
-		var tripleButton = document.getElementsByClassName("triple")[0];
-		var linkTypeButtons = [singleButton,doubleButton,tripleButton];
-		function resetButton() {
-			for (i = 0; i < 3; i++) {
-				linkType[i] = false;
-				linkTypeButtons[i].style.borderStyle = 'outset';
-			}		
-		}
-
-		function linkButton(i) {
-			if (linkType[i]){
-				linkType[i] = false;
-				linkTypeButtons[i].style.borderStyle = 'outset';
-			} else {
-				resetButton();
-				linkType[i] = true;
-				linkTypeButtons[i].style.borderStyle = 'inset';
-			}
-		}
-		singleButton.onclick = function() {linkButton(0)};
-		doubleButton.onclick = function() {linkButton(1)};
-		tripleButton.onclick = function() {linkButton(2)};
-
-
-		var testButton = document.getElementsByClassName("test")[0];
-		testButton.onclick = function() {
-			alert(linkType);
-		}
-	</script>
+	<script type="text/javascript" src="scripts/script.js"></script>
 </body>
 </html>
