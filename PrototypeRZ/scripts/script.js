@@ -8,6 +8,7 @@ var linkTypeButtons = [singleButton,doubleButton,tripleButton,deleteButton];
 var elements = [];
 var create = [];
 var elementMain = null;
+var svgNS = "http://www.w3.org/2000/svg";
 
 
 
@@ -52,7 +53,19 @@ function createLink() {
 }
 
 function addElement() {
-	
+	let newElement = document.createElementNS(svgNS, 'circle');
+    newElement.setAttributeNS(null,"cx",create[1].x);
+    newElement.setAttributeNS(null,"cy",create[1].y);
+    newElement.setAttributeNS(null,"r",5);
+    newElement.setAttributeNS(null,"fill","purple");
+    newElement.setAttributeNS(null,"stroke","green");
+    newElement.setAttributeNS(null,"stroke-width",2);
+	elements.push(newElement);
+	svg.appendChild(newElement);
+	newElement.onclick = function() {
+		elementMain = this;
+		startChain();
+	};
 }
 
 function startChain() {
@@ -60,7 +73,7 @@ function startChain() {
 		deleteElement();
 	}
 	else if (linkType[0] || linkType[1] || linkType[2]){
-		elementMain.style.fill = "pink";
+		elementMain.setAttribute('fill', "pink");
 		svg.addEventListener('click',mouseClick);
 	}
 }
@@ -73,8 +86,8 @@ function mouseClick(evt) {
 	create.push(loc);
 	alert(mes);
 	if (create.length == 2){
-		//createLink();
-		elementMain.style.fill = "purple";
+		createLink();
+		elementMain.setAttribute('fill', "purple");
 		elementMain = null;
 		svg.removeEventListener('click',mouseClick);
 		create = [];
